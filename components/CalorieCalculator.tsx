@@ -38,30 +38,31 @@ const CalorieCalculator: React.FC = () => {
     };
   }, [currentStep]);
 
-const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-  const file = event.target.files?.[0];
-  if (file) {
-    // Create a preview URL
-    const imageUrl = URL.createObjectURL(file);
-    setSelectedImage(imageUrl);
-    setCurrentStep('preview');
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      // Create a preview URL
+      const imageUrl = URL.createObjectURL(file);
+      setSelectedImage(imageUrl);
+      setCurrentStep('preview');
 
-    // Convert to Base64
-    try {
-      const base64Image = await convertToBase64(file);
+      // Convert to Base64
+      try {
+        const base64Image = await convertToBase64(file);
 
-      if (typeof base64Image === 'string') {
-        // Remove the data URI prefix safely with optional chaining
-        const base64ImageWithoutPrefix = base64Image?.split(",")[1];
-        console.log("Base64 Image without prefix:", base64ImageWithoutPrefix);
-      } else {
-        console.error("Failed to convert file to base64. Result is not a string.");
+        if (base64Image !== null && typeof base64Image === 'string') {
+          // Remove the data URI prefix
+          const base64ImageWithoutPrefix = base64Image.split(",")[1] || "";
+          console.log("Base64 Image without prefix:", base64ImageWithoutPrefix);
+        } else {
+          console.error("Failed to convert file to base64. Result is not a string.");
+        }
+      } catch (error) {
+        console.error("Error converting file to base64:", error);
       }
-    } catch (error) {
-      console.error("Error converting file to base64:", error);
     }
-  }
-};
+  };
+
 
 
 
