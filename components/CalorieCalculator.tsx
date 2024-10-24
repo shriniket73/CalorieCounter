@@ -38,23 +38,45 @@ const CalorieCalculator: React.FC = () => {
     };
   }, [currentStep]);
 
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      const imageUrl = URL.createObjectURL(file);
-      setSelectedImage(imageUrl);
-      setCurrentStep('preview');
-    }
-  };
+    const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0];
+      if (file) {
+        // Create a preview URL
+        const imageUrl = URL.createObjectURL(file);
+        setSelectedImage(imageUrl);
+        setCurrentStep('preview');
 
-  const convertToBase64 = (file) => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => resolve(reader.result.split(',')[1]); // Extract base64 part
-      reader.onerror = (error) => reject(error);
-    });
-  };
+        // Convert to Base64
+        try {
+          const base64Image = await convertToBase64(file);
+          console.log("Base64 Image:", base64Image); // Log the base64 image to verify it
+        } catch (error) {
+          console.error("Error converting file to base64:", error);
+        }
+      }
+    };
+
+
+
+
+
+    const convertToBase64 = (fileOrBlob: File | Blob): Promise<string> => {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(fileOrBlob);
+        reader.onload = () => {
+          if (reader.result && typeof reader.result === "string") {
+            resolve(reader.result);
+          } else {
+            reject(new Error("Failed to convert to base64"));
+          }
+        };
+        reader.onerror = (error) => reject(new Error("FileReader error: " + error.message));
+      });
+    };
+
+
+
 
   const handleAnalyze = async () => {
     if (!selectedImage) return;
@@ -69,10 +91,17 @@ const CalorieCalculator: React.FC = () => {
         });
       }
 
-      // Convert image URL to base64 string
-      const response = await fetch(selectedImage);
-      const blob = await response.blob();
-      const base64Image = await convertToBase64(blob);
+    // Convert image URL to base64 string
+    const response = await fetch(selectedImage);
+    const blob = await response.blob();
+    const base64Image = await convertToBase64(blob);
+
+    // Remove the data URI prefix
+    const base64ImageWithoutPrefix = base64Image.split(",")[1];
+
+    // Log the base64 string without the prefix
+    console.log("Base64 Image without prefix:", base64ImageWithoutPrefix);
+
 
       // Send the base64 image to the GPT-4o API
       const apiKey = process.env.NEXT_PUBLIC_OPENAI_API_KEY;
@@ -97,7 +126,7 @@ const CalorieCalculator: React.FC = () => {
               {
                 "type": "image_url",
                 "image_url": {
-                  "url": `data:image/jpeg;base64,${base64Image}`
+                  "url": `data:image/jpeg;base64,${base64ImageWithoutPrefix}`
                 }
               }
             ]
