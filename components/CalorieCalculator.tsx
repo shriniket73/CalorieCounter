@@ -166,7 +166,8 @@ const convertToBase64 = (file: Blob | File): Promise<string | ArrayBuffer | null
 
       // Parse the response and gather nutritional information
       const description = responseData.choices[0].message.content;
-      const descriptionList = description.split('\n').map((item: string) => item.trim()).filter(item => item);
+      const descriptionList = description.split('\n').map((item: string) => item.trim()).filter((item: string) => item);
+
 
       // Initialize nutritional summary
       let nutritionalSummary = [];
