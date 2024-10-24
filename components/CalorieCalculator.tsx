@@ -60,7 +60,7 @@ const CalorieCalculator: React.FC = () => {
 
 
 
-    const convertToBase64 = (file: File): Promise<string | ArrayBuffer | null> => {
+    const convertToBase64 = (file: Blob | File): Promise<string | ArrayBuffer | null> => {
       return new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.readAsDataURL(file);
@@ -75,6 +75,7 @@ const CalorieCalculator: React.FC = () => {
         };
       });
     };
+
 
 
 
