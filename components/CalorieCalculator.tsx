@@ -60,20 +60,19 @@ const CalorieCalculator: React.FC = () => {
 
 
 
-    const convertToBase64 = (fileOrBlob: File | Blob): Promise<string> => {
+    const convertToBase64 = (file: File): Promise<string | ArrayBuffer | null> => {
       return new Promise((resolve, reject) => {
         const reader = new FileReader();
-        reader.readAsDataURL(fileOrBlob);
-        reader.onload = () => {
-          if (reader.result && typeof reader.result === "string") {
-            resolve(reader.result);
-          } else {
-            reject(new Error("Failed to convert to base64"));
-          }
+        reader.readAsDataURL(file);
+        
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = (error) => {
+          // Handle the error properly here
+          reject(new Error("FileReader error: " + (error?.target?.error?.message || "Unknown error")));
         };
-        reader.onerror = (error) => reject(new Error("FileReader error: " + error.message));
       });
     };
+
 
 
 
