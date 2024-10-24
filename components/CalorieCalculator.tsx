@@ -108,9 +108,14 @@ const convertToBase64 = (file: Blob | File): Promise<string | ArrayBuffer | null
     const blob = await response.blob();
     const base64Image = await convertToBase64(blob);
 
-    // Remove the data URI prefix
-    const base64ImageWithoutPrefix = base64Image.split(",")[1];
+    // Add type check for base64Image
+    if (!base64Image || typeof base64Image !== 'string') {
+        console.error("Failed to convert blob to base64. Result is not a string.");
+        return;
+    }
 
+    // Now TypeScript knows base64Image is definitely a string
+    const base64ImageWithoutPrefix = base64Image.split(",")[1] || "";
     // Log the base64 string without the prefix
     console.log("Base64 Image without prefix:", base64ImageWithoutPrefix);
 
