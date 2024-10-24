@@ -50,15 +50,12 @@ const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => 
     try {
       const base64Image = await convertToBase64(file);
 
-      // Ensure base64Image is a string before using it
-      if (typeof base64Image === 'string') {
-        console.log("Base64 Image:", base64Image); // Log the base64 image to verify it
-
-        // Optionally, remove the prefix if needed
+      if (base64Image && typeof base64Image === 'string') {
+        // Remove the data URI prefix
         const base64ImageWithoutPrefix = base64Image.split(",")[1];
         console.log("Base64 Image without prefix:", base64ImageWithoutPrefix);
       } else {
-        console.error("Failed to convert file to base64. Result is not a string.");
+        console.error("Failed to convert file to base64. Result is not a string or is null.");
       }
     } catch (error) {
       console.error("Error converting file to base64:", error);
@@ -81,6 +78,7 @@ const convertToBase64 = (file: Blob | File): Promise<string | ArrayBuffer | null
     };
   });
 };
+
 
 
 
