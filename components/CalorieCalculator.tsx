@@ -1,10 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Camera, Upload, ArrowLeft } from 'lucide-react';
 import { Card } from './ui/card';
 import { LoadingOverlay } from './LoadingOverlay';
 import ResultCards from './ResultCards';
 import type { AnalysisResult } from '../types';
-import { useRef } from 'react';
 
 const CalorieCalculator: React.FC = () => {
   const [currentStep, setCurrentStep] = useState<'upload' | 'preview' | 'result'>('upload');
@@ -13,7 +12,6 @@ const CalorieCalculator: React.FC = () => {
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
   const [isCameraActive, setIsCameraActive] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null); // Audio ref for controlling playback
-
 
   useEffect(() => {
     // Push current state to history when it changes
@@ -38,57 +36,46 @@ const CalorieCalculator: React.FC = () => {
     };
   }, [currentStep]);
 
-const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-        // Create a preview URL
-        const imageUrl = URL.createObjectURL(file);
-        setSelectedImage(imageUrl);
-        setCurrentStep('preview');
-        // Convert to Base64
-        try {
-            const base64Image = await convertToBase64(file);
-            // Move the type check outside the condition
-            if (!base64Image || typeof base64Image !== 'string') {
-                console.error("Failed to convert file to base64. Result is not a string.");
-                return;
-            }
-            
-            // At this point TypeScript knows base64Image is definitely a string
-            const base64ImageWithoutPrefix = base64Image.split(",")[1] || "";
-            console.log("Base64 Image without prefix:", base64ImageWithoutPrefix);
-        } catch (error) {
-            console.error("Error converting file to base64:", error);
+      // Create a preview URL
+      const imageUrl = URL.createObjectURL(file);
+      setSelectedImage(imageUrl);
+      setCurrentStep('preview');
+      // Convert to Base64
+      try {
+        const base64Image = await convertToBase64(file);
+        // Move the type check outside the condition
+        if (!base64Image || typeof base64Image !== 'string') {
+          console.error("Failed to convert file to base64. Result is not a string.");
+          return;
         }
+        
+        // At this point TypeScript knows base64Image is definitely a string
+        const base64ImageWithoutPrefix = base64Image.split(",")[1] || "";
+        console.log("Base64 Image without prefix:", base64ImageWithoutPrefix);
+      } catch (error) {
+        console.error("Error converting file to base64:", error);
+      }
     }
-};
+  };
 
+  const convertToBase64 = (file: Blob | File): Promise<string | ArrayBuffer | null> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
 
-
-
-const convertToBase64 = (file: Blob | File): Promise<string | ArrayBuffer | null> => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = (error) => {
-      const errorMessage =
-        error.target && error.target.error
-          ? error.target.error.message
-          : "Unknown error occurred while reading file";
-      reject(new Error("FileReader error: " + errorMessage));
-    };
-  });
-};
-
-
-
-
-
-
-
-
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = (error) => {
+        const errorMessage =
+          error.target && error.target.error
+            ? error.target.error.message
+            : "Unknown error occurred while reading file";
+        reject(new Error("FileReader error: " + errorMessage));
+      };
+    });
+  };
 
   const handleAnalyze = async () => {
     if (!selectedImage) return;
@@ -103,22 +90,21 @@ const convertToBase64 = (file: Blob | File): Promise<string | ArrayBuffer | null
         });
       }
 
-    // Convert image URL to base64 string
-    const response = await fetch(selectedImage);
-    const blob = await response.blob();
-    const base64Image = await convertToBase64(blob);
+      // Convert image URL to base64 string
+      const response = await fetch(selectedImage);
+      const blob = await response.blob();
+      const base64Image = await convertToBase64(blob);
 
-    // Add type check for base64Image
-    if (!base64Image || typeof base64Image !== 'string') {
+      // Add type check for base64Image
+      if (!base64Image || typeof base64Image !== 'string') {
         console.error("Failed to convert blob to base64. Result is not a string.");
         return;
-    }
+      }
 
-    // Now TypeScript knows base64Image is definitely a string
-    const base64ImageWithoutPrefix = base64Image.split(",")[1] || "";
-    // Log the base64 string without the prefix
-    console.log("Base64 Image without prefix:", base64ImageWithoutPrefix);
-
+      // Now TypeScript knows base64Image is definitely a string
+      const base64ImageWithoutPrefix = base64Image.split(",")[1] || "";
+      // Log the base64 string without the prefix
+      console.log("Base64 Image without prefix:", base64ImageWithoutPrefix);
 
       // Send the base64 image to the GPT-4o API
       const apiKey = process.env.NEXT_PUBLIC_OPENAI_API_KEY;
@@ -126,9 +112,7 @@ const convertToBase64 = (file: Blob | File): Promise<string | ArrayBuffer | null
       const headers = {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${apiKey}`
-
       };
-      
 
       const payload = {
         "model": "gpt-4o-mini",
@@ -168,14 +152,13 @@ const convertToBase64 = (file: Blob | File): Promise<string | ArrayBuffer | null
       const description = responseData.choices[0].message.content;
       const descriptionList = description.split('\n').map((item: string) => item.trim()).filter((item: string) => item);
 
-
       // Initialize nutritional summary
-      let nutritionalSummary = [];
+      let nutritionalSummary: { name: string, quantity: string, calories: string, protein: string }[] = [];
       let totalCalories = 0;
       let totalProtein = 0;
 
       for (const item of descriptionList) {
-        const [itemName, quantity] = item.split(':').map(part => part.trim());
+        const [itemName, quantity] = item.split(':').map((part: string) => part.trim());
 
         // Generate a prompt to get the calories and protein for each item
         const prompt = `Provide the estimated calorie and protein content for the following item: '${itemName}'. Include calories and protein in a concise format (e.g., 'Calories: 100 kcal, Protein: 5 g').`;
@@ -200,7 +183,7 @@ const convertToBase64 = (file: Blob | File): Promise<string | ArrayBuffer | null
         let protein = "N/A";
 
         for (const line of nutritionalInfo.split(', ')) {
-          const [key, value] = line.split(':').map(part => part.trim().toLowerCase());
+          const [key, value] = line.split(':').map((part: string) => part.trim().toLowerCase());
           if (key.includes('calories')) {
             calories = value;
           } else if (key.includes('protein')) {
@@ -232,7 +215,6 @@ const convertToBase64 = (file: Blob | File): Promise<string | ArrayBuffer | null
       console.log(`ouput tokens: ${completion_tokens}`);
       console.log(`Total Tokens Used: ${total_tokens}`);
       console.log(`Estimated Cost: $${totalCost.toFixed(4)}`);
-
 
       // Stop the audio after analysis is complete
       if (audioRef.current) {
