@@ -64,14 +64,18 @@ const CalorieCalculator: React.FC = () => {
       return new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.readAsDataURL(file);
-        
+
         reader.onload = () => resolve(reader.result);
         reader.onerror = (error) => {
-          // Handle the error properly here
-          reject(new Error("FileReader error: " + (error?.target?.error?.message || "Unknown error")));
+          const errorMessage =
+            error.target && error.target.error
+              ? error.target.error.message
+              : "Unknown error occurred while reading file";
+          reject(new Error("FileReader error: " + errorMessage));
         };
       });
     };
+
 
 
 
