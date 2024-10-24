@@ -80,7 +80,9 @@ const CalorieCalculator: React.FC = () => {
       const headers = {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${apiKey}`
-};
+
+      };
+      
 
       const payload = {
         "model": "gpt-4o-mini",
